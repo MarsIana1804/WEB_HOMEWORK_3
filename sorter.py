@@ -1,13 +1,10 @@
 import os
 import shutil
-import threading
+import multiprocessing
+import sys
 
-src_folder  = r'/Users/marinavakulenko/Documents/Source'
-default_dest_folder = r'/Users/marinavakulenko/Documents/Destination_folder'
 
 folder_list = []
-threads = []
-
 
 
 def traverse_folder(root):
@@ -27,7 +24,7 @@ def sort_files(folder, destination_folder):
             source_file = os.path.join(root, file)
             destination_file = os.path.join(ext_folder, file)
             shutil.copy2(source_file, destination_file)
-            #print(f"Copying {source_file} to {destination_file}")
+            print(f"Copying {source_file} to {destination_file}")
 
 
 def clean_destination(destination_folder):
@@ -54,41 +51,47 @@ def main(source_folder, destination_folder, num_threads):
     traverse_folder(source_folder)
 
     # Show folders
-    #for file in folder_list:
-    #    print(file)
+    for file in folder_list:
+        print(file)
 
 
     # Divide folders into chunks
     chunk_size = (len(folder_list) + num_threads - 1) // num_threads
     folder_chunks = [folder_list[i:i + chunk_size] for i in range(0, len(folder_list), chunk_size)]
-    #print(f"Folder chunks:{folder_chunks}")
 
-    # Launch threads for each folder chunk
+
+    # Launch processes for each folder chunk
+    processes = []
     for chunk in folder_chunks:
         for folder in chunk:
-            thread = threading.Thread(target=sort_files, args=(folder, destination_folder))
             
-            thread.start()
-            threads.append(thread)
 
-    # Wait for all threads to finish
-    for thread in threads:
-        thread.join()
-        print(type(thread))
+            process = multiprocessing.Process(target=sort_files, args=(folder, destination_folder))
+            process.start()
+            processes.append(process)
+
+   
+
+    # Wait for all processes to finish
+    for process in processes:
+        process.join()
 
 
 
 
 if __name__ == "__main__":
 
-    # Pass dest, src, num_threadh manually
-    #src_folder = input("Enter source folder path: ")
-    #dest_folder = input("Enter destination folder path: ")
-    #num_threads = int(input("Enter number of parallel threads: "))
+   
+    # Check if enough arguments are provided
+    if len(sys.argv) < 3:
+        print("Usage: python script.py <source_path> <destination_path>")
+        sys.exit(1)
+
+    # Extract source and destination paths from command line arguments
+    source_path = sys.argv[1]
+    destination_path = sys.argv[2]
+
+
+    main(source_path, destination_path, num_threads=2)
+
     
-    src_folder  = r'/Users/marinavakulenko/Documents/Source'
-    dest_folder = r'/Users/marinavakulenko/Documents/Destination_folder'
-
-
-
-    main(src_folder, destination_folder = default_dest_folder, num_threads=2)
